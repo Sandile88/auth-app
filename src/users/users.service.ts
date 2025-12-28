@@ -3,6 +3,7 @@ import { CreateUserDTO } from './dto/create-user.dto';
 import { User } from './schemas/user.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { UpdateUserDTO } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -35,12 +36,24 @@ export class UsersService {
         return this.userModel.findById(userId);
     }
 
-    async updateUserDetails(userId: string, updates: Partial<CreateUserDTO>) {
+    async updateUserDetails(userId: string, updates: UpdateUserDTO) { //Partial<CreateUserDTO>
         return this.userModel.findByIdAndUpdate(userId, updates, { new: true });
     }
 
     async deleteUser(userId: string) {
         return this.userModel.findByIdAndDelete(userId);
+    }
+
+    async markUserAsVerified(userId: string) {
+        return this.userModel.findByIdAndUpdate(userId, {isVerified: true});
+    }
+
+    async updateLastLogin(userId: string) {
+        return this.userModel.findByIdAndUpdate(userId, {lastLogin: new Date()});
+    }
+
+    async deactivateUser(userId: string) {
+        return this.userModel.findByIdAndUpdate(userId, {isActive: false});
     }
 
 }
