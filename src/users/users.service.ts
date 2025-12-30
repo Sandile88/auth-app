@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { CreateUserDTO } from './dto/create-user.dto';
 import { UpdateUserDTO } from './dto/update-user.dto';
 import { User } from './schemas/user.schema';
+import { createHash } from 'crypto';
 
 @Injectable()
 export class UsersService {
@@ -72,7 +73,13 @@ export class UsersService {
     }
 
     async findByResetToken(token: string) {
-        return this.userModel.findOne({ resetPasswordToken: token , resetPasswordExpires: {$gt: new Date()}});
+        const hashedToken = createHash('sha256').update(token).digest('hex'); // to query it
+        
+        return this.userModel.findOne({ resetPasswordToken: hashedToken , resetPasswordExpires: {$gt: new Date()}});
+    }
+
+    async findByVerificationToken(token: string) {
+        return this.userModel.findOne({ verificationToken: token, isVerified: false});
     }
 
 

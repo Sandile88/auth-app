@@ -4,14 +4,16 @@ import { RegisterDTO } from './dto/register.dto';
 import { LoginDTO } from './dto/login.dto';
 import { ForgotPasswordDTO } from './dto/forgot-password.dto';
 import * as bcrypt from 'bcrypt';
-import { randomBytes } from 'crypto';
+import { createHash, randomBytes } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class AuthService {
     constructor(
         private usersServices: UsersService,
-        private jtwService: JwtService
+        private jtwService: JwtService,
+        private emailService: EmailService
     ) {}
 
     async registerUser(registerDto: RegisterDTO) {
@@ -19,7 +21,9 @@ export class AuthService {
         const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
         await this.usersServices.setVerificationToken(user._id.toString(), verificationToken)
         
-        //send verification email
+        await this.emailService.sendVerificationEmail(user.email, verificationToken);
+        // message: 'Registration successful. Check your email for verification code.',
+
         
         const tokenPayload = {
             sub: user._id,
@@ -39,6 +43,17 @@ export class AuthService {
         }
         
     }
+
+    async verifyEmail(token: string) {
+        const user = await this.usersServices.findByVerificationToken(token);
+        if (!user) {
+            throw new BadRequestException('Invalid verification token');
+        }
+
+        await this.usersServices.markUserAsVerified(user._id.toString());
+
+        return { message: 'Email verified successfully. You can now login.' };
+        }
 
     
     async validateUser(email: string, password: string) {
@@ -96,14 +111,15 @@ export class AuthService {
             return {message: 'If email exists, reset link will be sent'}
         }
         const resetToken = randomBytes(12).toString('hex'); 
-        const hashedToken = await bcrypt.hash(resetToken, 10)
-        const expires = new Date(Date.now() + 600000) //10 
+        // const hashedToken = await bcrypt.hash(resetToken, 10)
+         const hashedToken = createHash('sha256').update(resetToken).digest('hex'); // to query it
+
+        const expires = new Date(Date.now() + 3600000) //10 
 
         await this.usersServices.setResetPasswordToken(user._id.toString(), hashedToken, expires);
 
-        // send email with the reset token
-
-
+        await this.emailService.sendPasswordResetEmail(user.email, resetToken);
+        return { message: 'If email exists, reset link will be sent' };
     }
 
     async resetPassword(token: string, newPassword: string) {        
@@ -111,11 +127,14 @@ export class AuthService {
         if(!user) {
             throw new BadRequestException('Invalid or expired reset token')
         }
-        // if (user.resetPasswordExpires < Date.now()) {
 
-        // }
+        if (user.resetPasswordExpires < new Date()) {
+            throw new BadRequestException('Reset token has expired');
+        }
 
-        const hashedPassword = await bcrypt.hash(newPassword, 12);
-        await this.usersServices.updatePassword(user._id.toString(), hashedPassword);
+        // const hashedPassword = await bcrypt.hash(newPassword, 12);
+        await this.usersServices.updatePassword(user._id.toString(), newPassword);
+        return { message: 'Password reset successful. You can now login.' };
+
     }
 }
