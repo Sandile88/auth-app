@@ -77,6 +77,10 @@ export class UsersService {
         return this.userModel.findByIdAndUpdate(userId, {password: hashedPassword, resetPasswordToken: null, resetPasswordExpires: null}, {new: true});
     }
 
+    async findByResetToken(token: string) {
+        return this.userModel.findOne({ resetPasswordToken: token , resetPasswordExpires: {$gt: new Date()}});
+    }
+
 
 
 }

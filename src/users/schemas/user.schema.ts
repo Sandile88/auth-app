@@ -27,7 +27,7 @@ export class User {
     resetPasswordExpires?: Date;
 
     @Prop()
-    lastLogin?: Date; //what does this ? mean
+    lastLogin?: Date;
 
     @Prop({ default: true })
     isActive: boolean
