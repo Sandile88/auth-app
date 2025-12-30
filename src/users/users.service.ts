@@ -11,12 +11,6 @@ export class UsersService {
     constructor( @InjectModel(User.name) private userModel: Model<User>) {}
 
     async createUser(createUserDto: CreateUserDTO) {
-        // try {
-        //     if(!name)
-        // } catch (error) {
-            
-        // }
-
         const userAlreadyExists = await this.userModel.findOne({ email: createUserDto.email});
         if (userAlreadyExists) {
             throw new ConflictException("User already exists!");
