@@ -1,9 +1,10 @@
 import { ConflictException, Injectable } from '@nestjs/common';
-import { CreateUserDTO } from './dto/create-user.dto';
-import { User } from './schemas/user.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import * as bcrypt from 'bcrypt';
+import { CreateUserDTO } from './dto/create-user.dto';
 import { UpdateUserDTO } from './dto/update-user.dto';
+import { User } from './schemas/user.schema';
 
 @Injectable()
 export class UsersService {
@@ -21,8 +22,15 @@ export class UsersService {
             throw new ConflictException("User already exists!");
         }
 
+        const hashedPassword = await bcrypt.hash(createUserDto.password, 12);
+        // const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
+
         const user = new this.userModel({
-            ...createUserDto
+            ...createUserDto,
+            password: hashedPassword
+            // name: createUserDto.name,
+            // email: createUserDto.email,
+            // password: hashedPassword,
         })
 
         return user.save();
@@ -45,15 +53,30 @@ export class UsersService {
     }
 
     async markUserAsVerified(userId: string) {
-        return this.userModel.findByIdAndUpdate(userId, {isVerified: true});
+        return this.userModel.findByIdAndUpdate(userId, {isVerified: true, verificationToken: null}, {new: true}); //explain this
     }
 
     async updateLastLogin(userId: string) {
-        return this.userModel.findByIdAndUpdate(userId, {lastLogin: new Date()});
+        return this.userModel.findByIdAndUpdate(userId, {lastLogin: new Date()}, {new: true});
     }
 
     async deactivateUser(userId: string) {
-        return this.userModel.findByIdAndUpdate(userId, {isActive: false});
+        return this.userModel.findByIdAndUpdate(userId, {isActive: false}, {new: true});
     }
+
+    async setVerificationToken(userId: string, token: string) {
+        return this.userModel.findByIdAndUpdate(userId, {verificationToken: token}, { new: true});
+    }
+
+    async setResetPasswordToken(userId: string, token: string, expires: Date) {
+        return this.userModel.findByIdAndUpdate(userId, {resetPasswordToken: token, resetPasswordExpires: expires}, {new: true});
+    }
+
+    async updatePassword(userId: string, newPassword: string) {
+        const hashedPassword = await bcrypt.hash(newPassword, 12);
+        return this.userModel.findByIdAndUpdate(userId, {password: hashedPassword, resetPasswordToken: null, resetPasswordExpires: null}, {new: true});
+    }
+
+
 
 }

@@ -14,11 +14,20 @@ export class User {
     @Prop({required: true})
     password: string;
 
-    @Prop({ default: Date.now })
-    lastLogin: Date;
-
     @Prop({ default: false})
     isVerified: boolean
+
+     @Prop()
+    verificationToken?: string;
+
+    @Prop()
+    resetPasswordToken?: string;
+
+    @Prop()
+    resetPasswordExpires?: Date;
+
+    @Prop()
+    lastLogin?: Date; //what does this ? mean
 
     @Prop({ default: true })
     isActive: boolean
