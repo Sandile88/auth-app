@@ -8,7 +8,8 @@ import { AuthController } from './auth.controller';
     imports: [UsersModule, JwtModule.register({ 
         secret: 'JWT_SECRET', signOptions: {expiresIn: '1d'}})],
     providers: [AuthService],
-    controllers: [AuthController]
+    controllers: [AuthController],
+    exports: [AuthController]
 })
 export class AuthModule {
 }
