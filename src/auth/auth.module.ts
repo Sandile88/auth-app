@@ -9,7 +9,6 @@ import { AuthController } from './auth.controller';
         secret: 'JWT_SECRET', signOptions: {expiresIn: '1d'}})],
     providers: [AuthService],
     controllers: [AuthController],
-    exports: [AuthController]
 })
 export class AuthModule {
 }
